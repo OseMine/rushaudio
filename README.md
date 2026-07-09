@@ -3,6 +3,8 @@
 **A binary protocol for low-latency audio streaming over UDP.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/rushaudio.svg)](https://crates.io/crates/rushaudio)
+[![Documentation](https://docs.rs/rushaudio/badge.svg)](https://docs.rs/rushaudio)
 
 RushAudio is a **specification-first** protocol for streaming live audio with sub-100ms latency. The protocol is simple enough to implement in any language from scratch in a few hundred lines of code.
 
@@ -12,11 +14,18 @@ RushAudio is a **specification-first** protocol for streaming live audio with su
 |----------|-------|
 | Transport | UDP (default port 4210) |
 | Header size | 14 bytes |
-| Max payload | 1024 bytes |
+| Max payload | 4096 bytes |
 | Latency target | 30–100ms |
 | Loss recovery | XOR FEC (recovers 1 loss per group) |
 | Codecs | Opus, PCM S16LE, A-law, μ-law |
 | Byte order | Big-endian (except PCM samples: little-endian) |
+
+## Installation
+
+```toml
+[dependencies]
+rushaudio = "1.0.0"
+```
 
 ## Specification
 
@@ -41,7 +50,7 @@ The `src/` directory contains a working Rust implementation. Use it to:
 ```bash
 cd rushaudio
 cargo build                    # compiles, zero warnings
-cargo test                     # 13 tests, all pass
+cargo test                     # 24 tests, all pass
 cargo run --example server     # start a stream receiver on :4210
 cargo run --example client     # stream a test tone to the server
 ```
@@ -104,7 +113,7 @@ rushaudio/
 │   ├── protocol.md         ← THE SPEC. Start here.
 │   └── architecture.md     ← Design overview.
 ├── src/                    ← Rust reference implementation.
-│   ├── protocol/           ← Packet serialization, types
+│   ├── protocol/           ← Packet serialization, types, metadata
 │   ├── transport/          ← UDP wrapper, connection tracking
 │   ├── session/            ← Handshake, session manager
 │   ├── audio/              ← Codecs, jitter buffer
