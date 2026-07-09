@@ -1,6 +1,6 @@
 [package]
 name = "rushaudio"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "Low-latency audio over IP live streaming protocol"
 authors = ["RushAudio Contributors"]
