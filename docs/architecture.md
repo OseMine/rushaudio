@@ -19,6 +19,7 @@ RushAudio has four logical layers. Each has a single responsibility and can be i
 │  Handshake negotiation                             │
 │  Keepalive timers                                  │
 │  Session teardown                                  │
+│  Metadata exchange (track info, stream info)       │
 ├──────────────────────────────────────────────────┤
 │                 Audio Layer                        │
 │  Codec encode/decode (Opus, PCM, A-law, μ-law)    │
@@ -109,6 +110,7 @@ Manages the lifetime of a connection with a remote peer.
 - Detect session timeout (30s of no activity)
 - Send periodic keepalives (every 2–5s)
 - Clean up stale sessions
+- Send/receive stream metadata (track title, artist, codec info, custom fields)
 
 **Does not**:
 - Serialize packets
@@ -183,6 +185,7 @@ Type dispatch:
     KeepAlive → update last_activity, echo back
     Handshake → update state machine
     Control   → start/stop/pause/resume
+    Metadata  → store key-value pairs for stream info
     ↓
 Jitter buffer pop() → (timestamp, encoded_frame)
     ↓
@@ -220,6 +223,9 @@ Then add:
 | Jitter buffer: send out-of-order | Packets released in sequence order |
 | Keepalive timeout | Session cleaned up after 30s |
 | Sequence wrap-around | No gaps after 0xFFFFFFFF → 0x00000000 |
+| Metadata encode/decode roundtrip | All key-value pairs survive |
+| Metadata custom keys (0x80+) | Custom entries preserved correctly |
+| Metadata from/to packet | Packet type and payload intact |
 
 ## Protocol vs Implementation
 

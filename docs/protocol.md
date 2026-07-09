@@ -22,7 +22,7 @@ A binary, language-agnostic protocol for low-latency audio streaming over UDP.
 RushAudio runs exclusively over **UDP**. There is no TCP, no HTTP, no WebSocket framing.
 
 - **Default port**: `4210`
-- **Maximum datagram size**: 1038 bytes (14 header + 1024 payload)
+- **Maximum datagram size**: 4110 bytes (14 header + 4096 payload)
 - **Recommended MTU-safe size**: ≤ 1200 bytes (stay under typical Ethernet MTU of 1500 minus IP/UDP headers)
 
 ---
@@ -92,6 +92,7 @@ The smallest valid packet is 14 bytes (header with zero-length payload). Any dat
 | 0x06 | StreamControl | Bidirectional | Yes (1 byte) |
 | 0x07 | StatsReport | Bidirectional | Yes (variable) |
 | 0x08 | SIL | Bidirectional | Yes (variable) |
+| 0x09 | Metadata | Bidirectional | Yes (TLV entries) |
 
 Unknown or reserved type values MUST be silently dropped.
 
@@ -280,6 +281,58 @@ Used for comfort noise, DTMF events, or silence gaps.
 | 0 | 1 | sil_type | `0x01`=comfort noise, `0x02`=DTMF, `0x03`=silence |
 | 1 | 1 | duration_ms | Expected duration in ms |
 | 2 | N | parameters | Codec-specific payload |
+
+---
+
+### 4.9 Metadata (0x09)
+
+Carries key-value metadata about the stream. Entries use TLV (Type-Length-Value) encoding.
+
+**Wire format per entry**:
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     key       |         value_len          |  value ...        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 1 | key | Metadata key identifier |
+| 1 | 2 | value_len | Length of value in bytes (big-endian) |
+| 3 | N | value | Key-specific value data |
+
+Multiple entries are concatenated. The payload contains zero or more entries.
+
+**Built-in metadata keys** (0x01–0x7F reserved by protocol):
+
+| Key | ID | Value Type | Description |
+|-----|----|------------|-------------|
+| META_SSRC | 0x01 | u32 BE | Sender's SSRC |
+| META_TRACK_TITLE | 0x02 | UTF-8 string | Track or song title |
+| META_ARTIST | 0x03 | UTF-8 string | Artist or performer name |
+| META_ALBUM | 0x04 | UTF-8 string | Album or collection name |
+| META_GENRE | 0x05 | UTF-8 string | Genre or category |
+| META_SAMPLE_RATE | 0x06 | u32 BE | Sample rate in Hz |
+| META_CHANNELS | 0x07 | u16 BE | Number of audio channels |
+| META_CODEC_INFO | 0x08 | UTF-8 string | Codec name or description |
+| META_BITRATE | 0x09 | u32 BE | Bitrate in bits per second |
+| META_DURATION_MS | 0x0A | u64 BE | Total duration in milliseconds |
+| META_STREAM_TITLE | 0x0B | UTF-8 string | Stream or broadcast name |
+| META_STREAM_URL | 0x0C | UTF-8 string | Stream URL or source |
+
+**Custom metadata keys** (0x80–0xFF):
+
+Keys in this range are user-defined. Receivers that do not recognize a custom key MUST ignore it gracefully.
+
+**Usage notes**:
+
+- Metadata packets SHOULD be sent after handshake and whenever stream info changes
+- Metadata is advisory — receivers MAY silently ignore unknown keys
+- Strings MUST be valid UTF-8
+- A single Metadata packet MAY contain any number of entries
 
 ---
 
@@ -550,6 +603,7 @@ To implement RushAudio in any language, you need:
 - [ ] Stale session timeout (30s no-activity cutoff)
 - [ ] Configurable port, sample rate, bitrate, codec
 - [ ] Stats reporting (packet loss, jitter, RTT)
+- [ ] Metadata: TLV encode/decode, built-in keys, custom keys (0x80–0xFF)
 
 ### Wire format correspondence table
 
