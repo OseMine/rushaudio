@@ -1,0 +1,32 @@
+[package]
+name = "rushaudio"
+version = "0.1.0"
+edition = "2021"
+description = "Low-latency audio over IP live streaming protocol"
+authors = ["RushAudio Contributors"]
+license = "MIT"
+repository = "https://github.com/OseMine/rushaudio"
+keywords = ["audio", "streaming", "low-latency", "protocol", "webrtc"]
+
+[dependencies]
+# No external dependencies for core protocol - pure Rust std-lib
+# Optional: enable codec support with features
+# opus = { version = "0.3", optional = true }
+# tokio = { version = "1", features = ["full"], optional = true }
+
+[features]
+default = []
+# audio-codec = ["opus"]
+# async-io = ["tokio"]
+
+[lib]
+name = "rushaudio"
+path = "src/lib.rs"
+
+[[example]]
+name = "server"
+path = "examples/server.rs"
+
+[[example]]
+name = "client"
+path = "examples/client.rs"
