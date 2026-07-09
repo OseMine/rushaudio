@@ -11,7 +11,9 @@ pub struct UdpTransport {
 
 impl UdpTransport {
     pub fn bind(addr: &str) -> io::Result<Self> {
-        let parsed: SocketAddr = addr.parse().map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+        let parsed: SocketAddr = addr
+            .parse()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
         let socket = UdpSocket::bind(parsed)?;
         socket.set_nonblocking(true)?;
         Ok(Self {
@@ -40,6 +42,10 @@ impl UdpTransport {
                     }
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    return Ok(None);
+                }
+                #[cfg(windows)]
+                Err(ref e) if e.raw_os_error() == Some(10054) => {
                     return Ok(None);
                 }
                 Err(e) => return Err(e),

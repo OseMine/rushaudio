@@ -10,14 +10,12 @@ keywords = ["audio", "streaming", "low-latency", "protocol", "webrtc"]
 
 [dependencies]
 # No external dependencies for core protocol - pure Rust std-lib
-# Optional: enable codec support with features
-# opus = { version = "0.3", optional = true }
-# tokio = { version = "1", features = ["full"], optional = true }
+
+[dev-dependencies]
+cpal = "0.15"
 
 [features]
 default = []
-# audio-codec = ["opus"]
-# async-io = ["tokio"]
 
 [lib]
 name = "rushaudio"

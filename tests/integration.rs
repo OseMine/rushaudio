@@ -174,3 +174,144 @@ fn test_seq_number_atomic() {
     assert_eq!(conn.next_seq(), 0);
     assert_eq!(conn.current_seq(), 1);
 }
+
+#[test]
+fn test_metadata_encode_decode_roundtrip() {
+    let meta = MetadataBuilder::new()
+        .ssrc(12345)
+        .track_title("Test Track")
+        .artist("Test Artist")
+        .sample_rate(48000)
+        .channels(2)
+        .custom(0x80, b"custom value".to_vec())
+        .build();
+
+    let encoded = meta.encode();
+    let decoded = Metadata::decode(&encoded).unwrap();
+
+    assert_eq!(decoded.get_u32(META_SSRC), Some(12345));
+    assert_eq!(
+        decoded.get_string(META_TRACK_TITLE).as_deref(),
+        Some("Test Track")
+    );
+    assert_eq!(
+        decoded.get_string(META_ARTIST).as_deref(),
+        Some("Test Artist")
+    );
+    assert_eq!(decoded.get_u32(META_SAMPLE_RATE), Some(48000));
+    assert_eq!(decoded.get_u16(META_CHANNELS), Some(2));
+    assert_eq!(decoded.get(0x80), Some(b"custom value".as_slice()));
+    assert!(!decoded.is_empty());
+    assert_eq!(decoded.len(), 6);
+}
+
+#[test]
+fn test_metadata_to_from_packet() {
+    let meta = MetadataBuilder::new()
+        .track_title("Song")
+        .stream_title("My Stream")
+        .build();
+
+    let pkt = meta.to_packet(10, 200);
+    assert_eq!(pkt.header.packet_type, PacketType::Metadata);
+    assert_eq!(pkt.header.sequence, 10);
+    assert_eq!(pkt.header.timestamp, 200);
+
+    let recovered = Metadata::from_packet(&pkt).unwrap();
+    assert_eq!(
+        recovered.get_string(META_TRACK_TITLE).as_deref(),
+        Some("Song")
+    );
+    assert_eq!(
+        recovered.get_string(META_STREAM_TITLE).as_deref(),
+        Some("My Stream")
+    );
+}
+
+#[test]
+fn test_metadata_overwrite() {
+    let mut meta = Metadata::new();
+    meta.set_string(META_TRACK_TITLE, "First");
+    assert_eq!(meta.get_string(META_TRACK_TITLE).as_deref(), Some("First"));
+
+    meta.set_string(META_TRACK_TITLE, "Second");
+    assert_eq!(meta.get_string(META_TRACK_TITLE).as_deref(), Some("Second"));
+    assert_eq!(meta.len(), 1);
+}
+
+#[test]
+fn test_metadata_remove() {
+    let mut meta = Metadata::new();
+    meta.set_string(META_ARTIST, "Artist");
+    assert!(meta.contains(META_ARTIST));
+
+    meta.remove(META_ARTIST);
+    assert!(!meta.contains(META_ARTIST));
+    assert!(meta.is_empty());
+}
+
+#[test]
+fn test_metadata_empty() {
+    let meta = Metadata::new();
+    assert!(meta.is_empty());
+    assert_eq!(meta.len(), 0);
+
+    let encoded = meta.encode();
+    assert!(encoded.is_empty());
+
+    let decoded = Metadata::decode(&encoded).unwrap();
+    assert!(decoded.is_empty());
+}
+
+#[test]
+fn test_metadata_from_packet_wrong_type() {
+    let pkt = Packet::new(PacketType::AudioData, 0, 0, vec![0x01]);
+    let result = Metadata::from_packet(&pkt);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_metadata_truncated_entry() {
+    // key(1) + len(2) says 10 bytes, but only 1 byte of value present
+    let data = [META_TRACK_TITLE, 0x00, 0x0A, b'A'];
+    let result = Metadata::decode(&data);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_metadata_truncated_header() {
+    // Only 2 bytes, not enough for a full entry header
+    let data = [META_TRACK_TITLE, 0x00];
+    let result = Metadata::decode(&data);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_metadata_builder_custom_key() {
+    let meta = MetadataBuilder::new()
+        .custom(0x80, b"hello".to_vec())
+        .custom(0xFF, vec![0x01, 0x02])
+        .build();
+
+    assert_eq!(meta.get(0x80), Some(b"hello".as_slice()));
+    assert_eq!(meta.get(0xFF), Some([0x01, 0x02].as_slice()));
+    assert_eq!(meta.len(), 2);
+}
+
+#[test]
+fn test_metadata_iter() {
+    let meta = MetadataBuilder::new().track_title("A").artist("B").build();
+
+    let collected: Vec<_> = meta.iter().collect();
+    assert_eq!(collected.len(), 2);
+}
+
+#[test]
+fn test_metadata_packet_wire_format() {
+    let meta = MetadataBuilder::new().track_title("X").build();
+    let pkt = meta.to_packet(0, 0);
+    let wire = pkt.encode();
+    let decoded = Packet::decode(&wire).unwrap();
+    let recovered = Metadata::from_packet(&decoded).unwrap();
+    assert_eq!(recovered.get_string(META_TRACK_TITLE).as_deref(), Some("X"));
+}

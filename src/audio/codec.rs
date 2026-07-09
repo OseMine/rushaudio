@@ -16,7 +16,11 @@ impl AudioCodecManager {
     ) -> Result<Vec<u8>, AudioError> {
         match codec {
             AudioCodec::RawPcmI16 => {
-                if pcm_data.is_empty() || pcm_data.len() % (channels as usize * PCM_I16_SAMPLE_SIZE) != 0 {
+                if pcm_data.is_empty()
+                    || !pcm_data
+                        .len()
+                        .is_multiple_of(channels as usize * PCM_I16_SAMPLE_SIZE)
+                {
                     return Err(AudioError::InvalidFrameSize);
                 }
                 Ok(pcm_data.to_vec())
@@ -78,7 +82,12 @@ impl AudioCodecManager {
         }
     }
 
-    pub fn frame_size(codec: AudioCodec, sample_rate: u32, channels: u16, duration_ms: u64) -> usize {
+    pub fn frame_size(
+        codec: AudioCodec,
+        sample_rate: u32,
+        channels: u16,
+        duration_ms: u64,
+    ) -> usize {
         match codec {
             AudioCodec::RawPcmI16 => {
                 let samples = (sample_rate as u64 * duration_ms) / 1000;
@@ -119,7 +128,7 @@ fn linear_to_ulaw(sample: i16) -> u8 {
     let abs = if sample == i16::MIN {
         (i16::MAX as u16) + 1
     } else {
-        sample.unsigned_abs() as u16
+        sample.unsigned_abs()
     };
     let abs = abs + BIAS;
     let seg = match abs {
@@ -143,5 +152,5 @@ fn ulaw_to_linear(ulaw: u8) -> i16 {
     let exponent = ((ulaw >> 4) & 0x07) as u16;
     let mantissa = (ulaw & 0x0F) as u16;
     let linear = ((mantissa << 1) + 33) << (exponent + 2);
-    (sign as i16) * (linear as i16 - 132)
+    sign * (linear as i16 - 132)
 }

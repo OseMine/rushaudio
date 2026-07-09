@@ -18,6 +18,12 @@ pub struct Session {
     pub remote_ssrc: u32,
 }
 
+impl Default for SessionManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SessionManager {
     pub fn new() -> Self {
         Self {
@@ -26,12 +32,7 @@ impl SessionManager {
         }
     }
 
-    pub fn create_session(
-        &mut self,
-        addr: SocketAddr,
-        config: StreamConfig,
-        remote_ssrc: u32,
-    ) {
+    pub fn create_session(&mut self, addr: SocketAddr, config: StreamConfig, remote_ssrc: u32) {
         let mut conn = Connection::new(addr);
         conn.config = config;
         conn.ssrc = remote_ssrc;

@@ -11,6 +11,7 @@ pub enum PacketType {
     StreamControl = 0x06,
     StatsReport = 0x07,
     Sil = 0x08,
+    Metadata = 0x09,
 }
 
 impl PacketType {
@@ -24,6 +25,7 @@ impl PacketType {
             0x06 => Some(Self::StreamControl),
             0x07 => Some(Self::StatsReport),
             0x08 => Some(Self::Sil),
+            0x09 => Some(Self::Metadata),
             _ => None,
         }
     }

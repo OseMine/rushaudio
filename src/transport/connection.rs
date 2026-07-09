@@ -4,7 +4,6 @@ use std::time::{Duration, Instant};
 
 use crate::protocol::types::{ConnectionState, StreamConfig, StreamStats};
 
-
 pub struct Connection {
     pub remote_addr: SocketAddr,
     pub state: ConnectionState,
@@ -103,6 +102,10 @@ impl ConnectionPool {
 
     pub fn len(&self) -> usize {
         self.connections.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.connections.is_empty()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Connection> {

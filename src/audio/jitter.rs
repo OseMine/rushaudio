@@ -23,6 +23,12 @@ struct JitterPacket {
     received_at: Instant,
 }
 
+impl Default for JitterBuffer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl JitterBuffer {
     pub fn new() -> Self {
         let target = Duration::from_millis(DEFAULT_JITTER_BUFFER_MS);
@@ -63,9 +69,7 @@ impl JitterBuffer {
             received_at: Instant::now(),
         };
 
-        let pos = self
-            .packets
-            .binary_search_by(|p| p.sequence.cmp(&sequence));
+        let pos = self.packets.binary_search_by(|p| p.sequence.cmp(&sequence));
         match pos {
             Ok(_) => {} // Duplicate, drop
             Err(idx) => {

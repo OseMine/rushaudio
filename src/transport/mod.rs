@@ -1,5 +1,5 @@
-pub mod udp;
 pub mod connection;
+pub mod udp;
 
-pub use udp::UdpTransport;
 pub use connection::{Connection, ConnectionPool};
+pub use udp::UdpTransport;

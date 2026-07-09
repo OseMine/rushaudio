@@ -53,8 +53,7 @@ impl Packet {
             return Err(PacketError::BadMagic);
         }
         let version = data[2];
-        let packet_type =
-            PacketType::from_u8(data[3]).ok_or(PacketError::UnknownType(data[3]))?;
+        let packet_type = PacketType::from_u8(data[3]).ok_or(PacketError::UnknownType(data[3]))?;
 
         let mut seq_bytes = [0u8; 4];
         seq_bytes.copy_from_slice(&data[4..8]);

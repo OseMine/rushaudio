@@ -1,19 +1,20 @@
-pub mod protocol;
-pub mod transport;
-pub mod session;
 pub mod audio;
+pub mod protocol;
+pub mod session;
+pub mod transport;
 pub mod utils;
 
-pub use protocol::*;
-pub use transport::*;
-pub use session::*;
 pub use audio::*;
+pub use protocol::*;
+pub use session::*;
+pub use transport::*;
 pub use utils::*;
 
 pub mod prelude {
     pub use crate::audio::{AudioCodecManager, JitterBuffer, JitterStats};
     pub use crate::protocol::{
-        constants::*, types::*, Packet, PacketHeader, PacketType, StreamConfig, StreamStats,
+        constants::*, types::*, Metadata, MetadataBuilder, MetadataEntry, MetadataMap, Packet,
+        PacketHeader, PacketType, StreamConfig, StreamStats,
     };
     pub use crate::session::{Handshake, HandshakeRole, HandshakeState, SessionManager};
     pub use crate::transport::{Connection, ConnectionPool, UdpTransport};

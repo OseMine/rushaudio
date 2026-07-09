@@ -40,12 +40,9 @@ impl FecEncoder {
 
     /// Try to recover a lost packet using the repair packet and available packets.
     /// Returns the recovered payload and its sequence number.
-    pub fn try_recover(
-        repair_packet: &Packet,
-        available: &[&Packet],
-    ) -> Option<(u32, Vec<u8>)> {
+    pub fn try_recover(repair_packet: &Packet, available: &[&Packet]) -> Option<(u32, Vec<u8>)> {
         let payload = &repair_packet.payload;
-        if payload.len() < 1 {
+        if payload.is_empty() {
             return None;
         }
 
