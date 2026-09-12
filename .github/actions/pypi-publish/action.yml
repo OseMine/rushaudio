@@ -25,10 +25,21 @@ runs:
         OIDC_TOKEN=$(printf '%s' "${OIDC_RESP}" \
           | python3 -c "import sys,json; print(json.load(sys.stdin)['value'])")
 
-        MINTED=$(curl -s -X POST https://pypi.org/_/oidc/mint-token \
+        MINT_FILE="$(mktemp)"
+        MINT_STATUS=$(curl -s -o "${MINT_FILE}" -w "%{http_code}" \
+          -X POST -H "Content-Type: application/json" \
+          https://pypi.org/_/oidc/mint-token \
           -d "{\"token\":\"${OIDC_TOKEN}\"}")
-        PYPI_TOKEN=$(printf '%s' "${MINTED}" \
-          | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+        echo "PyPI mint-token status: ${MINT_STATUS}"
+        if [ "${MINT_STATUS}" != "200" ]; then
+          echo "PyPI could not mint a token. Is the trusted publisher configured" >&2
+          echo "for OseMine/rushaudio and workflow 'release.yml'?" >&2
+          cat "${MINT_FILE}" >&2
+          rm -f "${MINT_FILE}"
+          exit 1
+        fi
+        PYPI_TOKEN=$(python3 -c "import json; print(json.load(open('${MINT_FILE}'))['token'])")
+        rm -f "${MINT_FILE}"
 
         python3 -m pip install --quiet twine
         TWINE_USERNAME=__token__ TWINE_PASSWORD="${PYPI_TOKEN}" \

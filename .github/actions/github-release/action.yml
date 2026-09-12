@@ -39,5 +39,3 @@ runs:
           pip install rushaudio==${{ steps.version.outputs.VERSION }}
           ```
         generate_release_notes: true
-        update_release_body: true
-        update_release_name: true
