@@ -1,0 +1,17 @@
+name: Publish to PyPI
+description: "Publish built distributions to PyPI using trusted publishing (OIDC). Requires `permissions: id-token: write` in the calling workflow and a PyPI trusted publisher configured for this repository and workflow."
+
+inputs:
+  working-directory:
+    description: Directory that contains the built dist/ folder (relative to repo root)
+    required: false
+    default: ports/python
+
+runs:
+  using: composite
+  steps:
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        # The publish action resolves packages-dir from the workspace root.
+        packages-dir: ${{ inputs.working-directory }}/dist

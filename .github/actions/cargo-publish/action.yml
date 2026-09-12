@@ -1,0 +1,16 @@
+name: Publish to crates.io
+description: Publish the Rust crate to crates.io with the provided API token.
+
+inputs:
+  token:
+    description: crates.io API token (pass secrets.CARGO_REGISTRY_TOKEN)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Publish to crates.io
+      run: cargo publish
+      shell: bash
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ inputs.token }}

@@ -10,44 +10,80 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+
+  # ── Rust ──────────────────────────────────────────────────────────
+
   check:
-    name: Check
+    name: Rust check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - uses: ./.github/actions/setup-rust
       - run: cargo check --all-features
 
   test:
-    name: Test
+    name: Rust test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - uses: ./.github/actions/setup-rust
       - run: cargo test --all-features
 
   fmt:
-    name: Format
+    name: Rust format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
         with:
           components: rustfmt
+          cache: "false"
+          alsa: "false"
       - run: cargo fmt --all -- --check
 
   clippy:
-    name: Clippy
+    name: Rust clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - run: cargo clippy --all-features -- -D warnings
+
+  # ── Python ────────────────────────────────────────────────────────
+
+  python-test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run unit tests
+        working-directory: ports/python
+        run: python -m unittest discover -s tests -v
+      - uses: ./.github/actions/python-build
+        with:
+          python-version: ${{ matrix.python-version }}
+          working-directory: ports/python
+
+  python-version-sync:
+    name: Python version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Python port version matches crate version
+        run: |
+          CRATE_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)
+          PORT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' ports/python/pyproject.toml)
+          if [ "$CRATE_VERSION" != "$PORT_VERSION" ]; then
+            echo "::error version mismatch: crate=$CRATE_VERSION python=$PORT_VERSION"
+            exit 1
+          fi
+          echo "versions in sync: $PORT_VERSION"

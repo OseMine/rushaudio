@@ -1,0 +1,43 @@
+name: Build Python package
+description: Build an sdist and wheel for the rushaudio Python port and optionally verify the wheel installs and imports in a clean venv.
+
+inputs:
+  python-version:
+    description: Python version to build with
+    required: false
+    default: "3.12"
+  working-directory:
+    description: Directory containing the buildable package (relative to repo root)
+    required: false
+    default: ports/python
+  smoke-test:
+    description: Install the wheel in a clean venv and import rushaudio (true/false)
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install Python
+      uses: ./.github/actions/setup-python
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install build tooling
+      working-directory: ${{ inputs.working-directory }}
+      run: python -m pip install build
+      shell: bash
+
+    - name: Build sdist + wheel
+      working-directory: ${{ inputs.working-directory }}
+      run: python -m build
+      shell: bash
+
+    - name: Smoke-test installed wheel
+      if: ${{ inputs.smoke-test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        python -m venv /tmp/ra-wheel-venv
+        /tmp/ra-wheel-venv/bin/python -m pip install --quiet dist/*.whl
+        /tmp/ra-wheel-venv/bin/python -c "from rushaudio.prelude import *; import rushaudio; print('OK rushaudio', rushaudio.VERSION)"
+      shell: bash
