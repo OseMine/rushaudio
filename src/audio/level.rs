@@ -32,8 +32,10 @@ impl LevelMeter {
     /// aggregated across all channels.
     pub fn measure(pcm: &[u8]) -> FrameLevels {
         let samples = pcm
-            .chunks_exact(PCM_I16_SAMPLE_SIZE)
-            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]).unsigned_abs() as f32);
+            .as_chunks::<PCM_I16_SAMPLE_SIZE>()
+            .0
+            .iter()
+            .map(|chunk| i16::from_le_bytes(*chunk).unsigned_abs() as f32);
 
         let mut count = 0usize;
         let mut peak: u16 = 0;
@@ -66,9 +68,9 @@ impl LevelMeter {
         let mut sums = vec![0.0f64; channel_count];
         let mut counts = vec![0usize; channel_count];
 
-        for (i, chunk) in pcm.chunks_exact(PCM_I16_SAMPLE_SIZE).enumerate() {
+        for (i, chunk) in pcm.as_chunks::<PCM_I16_SAMPLE_SIZE>().0.iter().enumerate() {
             let ch = i % channel_count;
-            let abs = i16::from_le_bytes([chunk[0], chunk[1]]).unsigned_abs() as f32;
+            let abs = i16::from_le_bytes(*chunk).unsigned_abs() as f32;
             if abs as u16 > peaks[ch] {
                 peaks[ch] = abs as u16;
             }
