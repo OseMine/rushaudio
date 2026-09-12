@@ -9,7 +9,24 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Skip if version already published
+      id: check
+      shell: bash
+      run: |
+        CRATE=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n 1)
+        VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)
+        MAX=$(curl -s -H "User-Agent: rushaudio-ci" \
+          "https://crates.io/api/v1/crates/${CRATE}" \
+          | python3 -c "import sys,json; print(json.load(sys.stdin).get('crate',{}).get('max_version',''))")
+        echo "crate=${CRATE} version=${VERSION} latest=${MAX}"
+        if [ "$MAX" = "$VERSION" ]; then
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Publish to crates.io
+      if: steps.check.outputs.skip != 'true'
       run: cargo publish
       shell: bash
       env:

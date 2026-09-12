@@ -15,3 +15,7 @@ runs:
       with:
         # The publish action resolves packages-dir from the workspace root.
         packages-dir: ${{ inputs.working-directory }}/dist
+        # Disable PEP 740 attestations: the signing step derives a container
+        # image name from `github.repository`, and the mixed-case org
+        # (`OseMine/rushaudio`) is not a valid lowercase Docker reference.
+        attestations: false
