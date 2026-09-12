@@ -118,7 +118,7 @@ The client plays a 440Hz tone on your speakers while streaming to the server. Th
 
 ## Implementing in other languages
 
-The protocol spec (`docs/protocol.md`) contains everything you need:
+The protocol spec ([`docs/protocol.md`](docs/protocol.md)) contains everything you need:
 
 - Exact byte layout for every packet type (with ASCII diagrams)
 - Session state machine
