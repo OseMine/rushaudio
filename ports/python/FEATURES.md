@@ -1,7 +1,7 @@
 # RushAudio Python Port — Features
 
 A pure-Python (≥ 3.9, standard library only) implementation of the
-[RushAudio](https://github.com/OseMine/rushaudio) v1.0.0 protocol, wire-
+[RushAudio](https://github.com/OseMine/rushaudio) v1.1.0 protocol, wire-
 compatible with the Rust reference implementation.
 
 | Property | Value |
@@ -11,7 +11,7 @@ compatible with the Rust reference implementation.
 | Max payload | 4096 bytes |
 | Dependencies | none (stdlib only) |
 | Tests | 37 (stdlib `unittest`) |
-| Package | `rushaudio` 1.0.0 on PyPI layout |
+| Package | `rushaudio` 1.1.0 on PyPI layout |
 
 ## Rust feature support on Python
 
@@ -139,4 +139,4 @@ Deliberate, documented differences from the Rust reference:
 
 ## Versioning
 
-Version-tracked to match the crate: `rushaudio 1.0.0` ↔ Rust `1.0.0`.
+Version-tracked to match the crate: `rushaudio 1.1.0` ↔ Rust `1.1.0`.

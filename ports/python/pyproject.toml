@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rushaudio"
-version = "1.0.0"
+version = "1.1.0"
 description = "Low-latency audio over IP live streaming protocol (Python port)"
 readme = "README.md"
 license = { text = "MIT" }

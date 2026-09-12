@@ -57,7 +57,7 @@ Unknown or reserved types are silently dropped.
 
 ## Reference implementation (Rust)
 
-The `src/` crate (`rushaudio` 1.0.0) is a working, pure-std implementation of the spec.
+The `src/` crate (`rushaudio` 1.1.0) is a working, pure-std implementation of the spec.
 
 - **Zero runtime dependencies** — core protocol uses only the Rust standard library
 - **Public API** — `prelude`, `create_server(addr)` / `create_client()` helpers, `DEFAULT_PORT = 4210`

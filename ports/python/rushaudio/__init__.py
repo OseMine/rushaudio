@@ -43,7 +43,7 @@ from .types import (
     StreamStats,
 )
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_PORT: int = 4210
 
 

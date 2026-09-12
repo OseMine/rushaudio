@@ -22,8 +22,8 @@ This port mirrors the public API and wire format of the Rust reference implement
 pip install rushaudio            # from PyPI (once published)
 # or build/install from source:
 cd ports/python
-python -m pip wheel . -w dist    # -> dist/rushaudio-1.0.0-py3-none-any.whl
-pip install dist/rushaudio-1.0.0-py3-none-any.whl
+python -m pip wheel . -w dist    # -> dist/rushaudio-1.1.0-py3-none-any.whl
+pip install dist/rushaudio-1.1.0-py3-none-any.whl
 ```
 
 ## Quick start
@@ -145,7 +145,7 @@ python -m unittest discover -s tests -v    # 37 tests, stdlib only
 
 ## Parity with the Rust reference
 
-| Rust (v1.0.0) | Python |
+| Rust (v1.1.0) | Python |
 |----------------|--------|
 | `Packet::new / encode / decode` | `Packet.new / encode / decode` |
 | `PacketType` | `PacketType` (`AUDIO_DATA`, …) |

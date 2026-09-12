@@ -25,7 +25,7 @@ RushAudio is a **specification-first** protocol for streaming live audio with su
 
 ```toml
 [dependencies]
-rushaudio = "1.0.0"
+rushaudio = "1.1.0"
 ```
 
 ## Features
