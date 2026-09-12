@@ -93,6 +93,7 @@ The smallest valid packet is 14 bytes (header with zero-length payload). Any dat
 | 0x07 | StatsReport | Bidirectional | Yes (variable) |
 | 0x08 | SIL | Bidirectional | Yes (variable) |
 | 0x09 | Metadata | Bidirectional | Yes (TLV entries) |
+| 0x0A | AudioLevel | Bidirectional | Yes (10 bytes) |
 
 Unknown or reserved type values MUST be silently dropped.
 
@@ -333,6 +334,45 @@ Keys in this range are user-defined. Receivers that do not recognize a custom ke
 - Metadata is advisory — receivers MAY silently ignore unknown keys
 - Strings MUST be valid UTF-8
 - A single Metadata packet MAY contain any number of entries
+
+---
+
+### 4.10 AudioLevel (0x0A) — VU meter
+
+Carries per-packet peak and RMS audio levels so receivers can drive level meters **without decoding the audio frame** (essential for encoded codecs such as Opus). The level packet is correlated to the `AudioData` packet it describes via the audio sequence number and timestamp carried in its payload.
+
+**Payload format**:
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                   audio_sequence                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                   audio_timestamp                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      peak     |      rms     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | audio_sequence | Sequence number of the `AudioData` packet these levels describe |
+| 4 | 4 | audio_timestamp | Timestamp of the `AudioData` packet these levels describe |
+| 8 | 1 | peak | Peak level (dBFS) |
+| 9 | 1 | rms | RMS level (dBFS) |
+
+**Level encoding**: both fields measure decibels relative to full scale (dBFS) with 1 dB resolution, stored as a signed byte:
+- `0` = full scale (0 dBFS)
+- `-1` … `-127` = progressively quieter (−1 … −127 dBFS)
+- `i8::MIN` (−128) = digital silence (−∞ dBFS)
+
+**Usage notes**:
+
+- Senders MUST compute levels from the uncompressed PCM frame **before** encoding (measuring compressed audio is lossy)
+- Level packets use the packet header's own sequence number; publication cadence is sender-defined (typically one per audio packet)
+- Receivers SHOULD tolerate missing/out-of-order level packets and correlate them to audio using `audio_sequence`/`audio_timestamp`
+- Receivers that do not need meters MAY silently drop `AudioLevel` packets
 
 ---
 
@@ -604,6 +644,7 @@ To implement RushAudio in any language, you need:
 - [ ] Configurable port, sample rate, bitrate, codec
 - [ ] Stats reporting (packet loss, jitter, RTT)
 - [ ] Metadata: TLV encode/decode, built-in keys, custom keys (0x80–0xFF)
+- [ ] Audio levels: per-packet peak/RMS (VU meter) encode/decode via `AudioLevel` (0x0A)
 
 ### Wire format correspondence table
 

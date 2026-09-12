@@ -315,3 +315,95 @@ fn test_metadata_packet_wire_format() {
     let recovered = Metadata::from_packet(&decoded).unwrap();
     assert_eq!(recovered.get_string(META_TRACK_TITLE).as_deref(), Some("X"));
 }
+
+#[test]
+fn test_audio_levels_encode_decode_roundtrip() {
+    let levels = AudioLevels::new(42, 1000, -6, -9);
+    let encoded = levels.encode();
+    assert_eq!(encoded.len(), AUDIO_LEVELS_PAYLOAD_SIZE);
+
+    let decoded = AudioLevels::decode(&encoded).unwrap();
+    assert_eq!(decoded.audio_sequence, 42);
+    assert_eq!(decoded.audio_timestamp, 1000);
+    assert_eq!(decoded.peak, -6);
+    assert_eq!(decoded.rms, -9);
+}
+
+#[test]
+fn test_audio_levels_to_from_packet() {
+    let levels = AudioLevels::new(7, 500, LEVEL_DBFS_MAX, -20);
+    let pkt = levels.to_packet(1, 500);
+    assert_eq!(pkt.header.packet_type, PacketType::AudioLevel);
+    assert_eq!(pkt.header.sequence, 1);
+    assert_eq!(pkt.header.timestamp, 500);
+
+    let recovered = AudioLevels::from_packet(&pkt).unwrap();
+    assert_eq!(recovered, levels);
+}
+
+#[test]
+fn test_audio_levels_from_packet_wrong_type() {
+    let pkt = Packet::new(PacketType::AudioData, 0, 0, vec![0x01]);
+    let result = AudioLevels::from_packet(&pkt);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_audio_levels_short_payload_fails() {
+    let result = AudioLevels::decode(&[0u8; 4]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_level_meter_full_scale() {
+    // Three samples at i16::MAX -> 0 dBFS for both peak and RMS.
+    let pcm = vec![0xFFu8, 0x7F, 0xFF, 0x7F, 0xFF, 0x7F];
+    let levels = LevelMeter::measure(&pcm);
+    assert_eq!(levels.peak, LEVEL_DBFS_MAX);
+    assert_eq!(levels.rms, LEVEL_DBFS_MAX);
+}
+
+#[test]
+fn test_level_meter_silence() {
+    let pcm = vec![0u8; 64];
+    let levels = LevelMeter::measure(&pcm);
+    assert_eq!(levels.peak, LEVEL_SILENCE);
+    assert_eq!(levels.rms, LEVEL_SILENCE);
+}
+
+#[test]
+fn test_level_meter_sine_tone() {
+    // 12 kHz sine at amplitude 0.5 (period = 4 samples @ 48 kHz), 10 ms mono.
+    // Expected: peak = 0.5 (-6 dBFS), RMS = 0.5 / sqrt(2) (-9 dBFS).
+    let sample_rate = 48000u32;
+    let freq = 12000.0;
+    let mut pcm = Vec::new();
+    for i in 0..480u32 {
+        let t = i as f32 / sample_rate as f32;
+        let v = (t * freq * 2.0 * std::f32::consts::PI).sin() * 0.5;
+        pcm.extend_from_slice(&((v * i16::MAX as f32) as i16).to_le_bytes());
+    }
+
+    let levels = LevelMeter::measure(&pcm);
+    assert_eq!(levels.peak, -6);
+    assert_eq!(levels.rms, -9);
+}
+
+#[test]
+fn test_level_meter_per_channel() {
+    // Stereo: left channel full scale, right channel silent.
+    let mut pcm = Vec::new();
+    for _ in 0..16 {
+        pcm.extend_from_slice(&i16::MAX.to_le_bytes());
+        pcm.extend_from_slice(&0i16.to_le_bytes());
+    }
+
+    let all = LevelMeter::measure(&pcm);
+    assert_eq!(all.peak, LEVEL_DBFS_MAX);
+
+    let per_ch = LevelMeter::measure_per_channel(&pcm, 2);
+    assert_eq!(per_ch.len(), 2);
+    assert_eq!(per_ch[0].peak, LEVEL_DBFS_MAX);
+    assert_eq!(per_ch[0].rms, LEVEL_DBFS_MAX);
+    assert_eq!(per_ch[1], FrameLevels::silence());
+}

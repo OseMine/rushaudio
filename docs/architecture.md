@@ -69,6 +69,7 @@ Transforms raw PCM samples to/from codec frames.
 **Does**:
 - Encode PCM → Opus, A-law, μ-law
 - Decode Opus, A-law, μ-law → PCM
+- Measure per-packet peak/RMS levels (VU meter) from PCM
 - Insert packets into jitter buffer by sequence order
 - Release packets after target delay
 - Adapt target delay to observed jitter
@@ -163,6 +164,8 @@ Your code. This is where you:
     ↓
 Audio codec: PCM → encoded frame
     ↓ (optional)
+Level meter: PCM → per-packet peak/RMS levels
+    ↓ (optional)
 FEC encoder: group frames → repair packet
     ↓
 Packet: wrap in header (type=AudioData, seq++, timestamp)
@@ -181,6 +184,7 @@ Transport: deserialize bytes → Packet (header + payload)
     ↓
 Type dispatch:
     AudioData → push to jitter buffer
+    AudioLevel → feed VU meter (no audio decode needed)
     FECData   → hold for recovery
     KeepAlive → update last_activity, echo back
     Handshake → update state machine

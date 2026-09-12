@@ -32,10 +32,11 @@ rushaudio = "1.0.0"
 
 ### Protocol
 
-- **9 packet types**: AudioData, FECData, Handshake, KeepAlive, StreamControl, StatsReport, SIL, Metadata
+- **10 packet types**: AudioData, FECData, Handshake, KeepAlive, StreamControl, StatsReport, SIL, Metadata, AudioLevel
 - **4 audio codecs**: Opus, Raw PCM S16LE, A-law, μ-law
 - **XOR FEC**: Forward error correction recovering 1 loss per group
 - **Jitter buffer**: Adaptive delay, in-order playout, late packet detection
+- **Audio levels**: Per-packet peak/RMS (VU meter) over `AudioLevel` packets — receivers show meters without decoding audio
 - **Metadata**: Stream info exchange with built-in and custom key-value pairs
 
 ### Metadata
@@ -94,7 +95,7 @@ The `src/` directory contains a working Rust implementation. Use it to:
 ```bash
 cd rushaudio
 cargo build                         # compiles, zero warnings
-cargo test                          # 24 tests, all pass
+cargo test                          # 32 tests, all pass
 cargo run --example server          # start a stream receiver on :4210
 cargo run --example client          # stream a test tone to the server
 cargo run --example client -- 127.0.0.1:4210 "Song Title" "Artist"
@@ -195,7 +196,7 @@ rushaudio/
 ├── examples/
 │   ├── server.rs           ← Streaming server with metadata handling
 │   └── client.rs           ← Streaming client with audio playback
-├── tests/                  ← Integration test suite (24 tests)
+├── tests/                  ← Integration test suite (32 tests)
 ├── .github/workflows/
 │   ├── ci.yml              ← CI: check, test, fmt, clippy
 │   └── release.yml         ← Release to crates.io + GitHub

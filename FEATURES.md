@@ -17,7 +17,7 @@ A binary, specification-first protocol for low-latency audio streaming over UDP,
 
 ### Packet types
 
-All 9 packet types are defined in the wire spec and implemented in the reference decoder.
+All 10 packet types are defined in the wire spec and implemented in the reference decoder.
 
 | Value | Name | Purpose |
 |-------|------|---------|
@@ -30,6 +30,7 @@ All 9 packet types are defined in the wire spec and implemented in the reference
 | 0x07 | StatsReport | Loss, jitter, RTT exchange |
 | 0x08 | SIL | Silence Insertion Descriptor (comfort noise, DTMF, silence) |
 | 0x09 | Metadata | TLV-encoded key-value stream info |
+| 0x0A | AudioLevel | Per-packet peak/RMS levels for VU meters |
 
 Unknown or reserved types are silently dropped.
 
@@ -66,6 +67,7 @@ The `src/` crate (`rushaudio` 1.0.0) is a working, pure-std implementation of th
 - **Transport** — non-blocking `UdpTransport`, per-peer `Connection` with stats and an atomic sequence counter, bounded `ConnectionPool`
 - **Sessions** — `SessionManager` with keepalive generation and stale-session sweeping
 - **Jitter buffer** — sequence-sorted insertion, adaptive delay, statistics (depth, dropped, late, jitter)
+- **Audio levels** — `AudioLevel` packets (0x0A) carry per-packet peak and RMS in dBFS (1 dB resolution); `LevelMeter` computes both overall and per-channel levels from PCM without any decode on the receiver side
 - **FEC** — XOR group encoding and single-loss recovery
 
 ### Metadata keys
@@ -93,7 +95,7 @@ The `src/` crate (`rushaudio` 1.0.0) is a working, pure-std implementation of th
 
 - **Server** (`cargo run --example server`) — binds `:4210`, replies to handshakes, sends server metadata (incl. custom key), logs frames and metadata, echoes keepalives, sweeps stale sessions, handles STOP teardown
 - **Client** (`cargo run --example client`) — streams a 440Hz test tone as raw PCM on a 20ms cadence, plays it via `cpal`, re-sends dynamic metadata every 5s, sends keepalives every 2s, tears down gracefully
-- **Tests** — 24 integration tests covering packet round-trips, handshake, jitter reordering, connection pooling, FEC single-loss recovery, session management, codec conversion, and metadata
+- **Tests** — 32 integration tests covering packet round-trips, handshake, jitter reordering, connection pooling, FEC single-loss recovery, session management, codec conversion, metadata, and audio levels
 
 ## Documentation
 
@@ -109,7 +111,6 @@ From todos, not yet implemented:
 - Congestion control (WebRTC GCC) and bandwidth estimation probes
 - Reed-Solomon FEC for multi-loss recovery
 - Real-time text / captions channel
-- Audio level / VU meter metadata
 - Session migration across IP changes (SSRC + token)
 - VBR adaptation and gapless playout markers
 - Opus in-band FEC (LBRR)

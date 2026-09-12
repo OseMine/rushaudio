@@ -11,10 +11,10 @@ pub use transport::*;
 pub use utils::*;
 
 pub mod prelude {
-    pub use crate::audio::{AudioCodecManager, JitterBuffer, JitterStats};
+    pub use crate::audio::{AudioCodecManager, FrameLevels, JitterBuffer, JitterStats, LevelMeter};
     pub use crate::protocol::{
-        constants::*, types::*, Metadata, MetadataBuilder, MetadataEntry, MetadataMap, Packet,
-        PacketHeader, PacketType, StreamConfig, StreamStats,
+        constants::*, types::*, AudioLevels, Metadata, MetadataBuilder, MetadataEntry, MetadataMap,
+        Packet, PacketHeader, PacketType, StreamConfig, StreamStats,
     };
     pub use crate::session::{Handshake, HandshakeRole, HandshakeState, SessionManager};
     pub use crate::transport::{Connection, ConnectionPool, UdpTransport};

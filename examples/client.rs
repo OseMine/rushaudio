@@ -39,6 +39,7 @@ fn main() -> std::io::Result<()> {
     let mut connected = false;
     let mut seq: u32 = 0;
     let mut audio_seq: u32 = 0;
+    let mut level_seq: u32 = 0;
     let mut last_keepalive = Instant::now();
     let mut last_metadata = Instant::now();
     let stream_active = true;
@@ -128,6 +129,16 @@ fn main() -> std::io::Result<()> {
             if let Err(e) = transport.send_packet(&audio_pkt, server_socket) {
                 eprintln!("[Client] Send error: {e}");
             }
+
+            // Ship per-packet VU meter levels so the receiver can show meters
+            // without decoding the frame.
+            let levels = LevelMeter::measure(&pcm_frame);
+            let level_pkt = AudioLevels::new(audio_seq, timestamp, levels.peak, levels.rms)
+                .to_packet(level_seq, timestamp);
+            if let Err(e) = transport.send_packet(&level_pkt, server_socket) {
+                eprintln!("[Client] Level send error: {e}");
+            }
+            level_seq += 1;
 
             if let Some(ref mut mgr) = session_store {
                 if let Some(session) = mgr.get_session_mut(&server_socket) {

@@ -12,6 +12,7 @@ pub enum PacketType {
     StatsReport = 0x07,
     Sil = 0x08,
     Metadata = 0x09,
+    AudioLevel = 0x0A,
 }
 
 impl PacketType {
@@ -26,6 +27,7 @@ impl PacketType {
             0x07 => Some(Self::StatsReport),
             0x08 => Some(Self::Sil),
             0x09 => Some(Self::Metadata),
+            0x0A => Some(Self::AudioLevel),
             _ => None,
         }
     }

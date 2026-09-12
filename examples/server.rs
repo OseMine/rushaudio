@@ -140,15 +140,24 @@ fn handle_packet(
 
         PacketType::StreamControl => {
             let code = packet.payload.first().copied().unwrap_or(0);
-            match code {
-                CONTROL_STREAM_STOP => {
-                    println!("[Server] Client {src} stopped stream");
-                    clients.remove(&src);
-                    sessions.remove_session(&src);
-                }
-                _ => {}
+            if code == CONTROL_STREAM_STOP {
+                println!("[Server] Client {src} stopped stream");
+                clients.remove(&src);
+                sessions.remove_session(&src);
             }
         }
+
+        PacketType::AudioLevel => match AudioLevels::from_packet(&packet) {
+            Ok(levels) => {
+                println!(
+                    "[Server] VU from {src}: audio seq={}, peak={}dBFS, rms={}dBFS",
+                    levels.audio_sequence, levels.peak, levels.rms
+                );
+            }
+            Err(e) => {
+                eprintln!("[Server] Failed to decode audio levels from {src}: {e}");
+            }
+        },
 
         _ => {
             println!(

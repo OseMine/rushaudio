@@ -45,3 +45,13 @@ pub const META_STREAM_URL: u8 = 0x0C;
 
 // Custom metadata keys start at 0x80
 pub const META_CUSTOM_BASE: u8 = 0x80;
+
+// Audio level / VU meter
+// Payload: 4(audio_sequence) + 4(audio_timestamp) + 1(peak) + 1(rms)
+pub const AUDIO_LEVELS_PAYLOAD_SIZE: usize = 10;
+// Levels are encoded in dBFS with 1 dB per unit. 0 = full scale (0 dBFS),
+// -127 = quietest non-silent level. LEVEL_SILENCE (-128) means -infinity dBFS
+// (digital silence).
+pub const LEVEL_DBFS_MAX: i8 = 0;
+pub const LEVEL_DBFS_MIN: i8 = -127;
+pub const LEVEL_SILENCE: i8 = i8::MIN;
