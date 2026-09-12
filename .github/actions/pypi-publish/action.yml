@@ -1,5 +1,10 @@
 name: Publish to PyPI
-description: "Publish built distributions to PyPI using trusted publishing (OIDC). Requires `permissions: id-token: write` in the calling workflow and a PyPI trusted publisher configured for this repository and workflow."
+description: "Publish built distributions to PyPI using trusted publishing (OIDC). Requires `permissions: id-token: write` and a PyPI trusted publisher configured for this repository and the `release.yml` workflow."
+# Note: pypa/gh-action-pypi-publish cannot be used here because the action
+# runs inside a Docker container whose image name is derived from
+# `github.repository`, and the mixed-case org (`OseMine/rushaudio`) is not a
+# valid lowercase Docker reference. Publishing is done imperatively with
+# twine using the same OIDC token flow.
 
 inputs:
   working-directory:
@@ -10,12 +15,21 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        # The publish action resolves packages-dir from the workspace root.
-        packages-dir: ${{ inputs.working-directory }}/dist
-        # Disable PEP 740 attestations: the signing step derives a container
-        # image name from `github.repository`, and the mixed-case org
-        # (`OseMine/rushaudio`) is not a valid lowercase Docker reference.
-        attestations: false
+    - name: Publish to PyPI via trusted publishing
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        OIDC_RESP=$(curl -s -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=pypi")
+        OIDC_TOKEN=$(printf '%s' "${OIDC_RESP}" \
+          | python3 -c "import sys,json; print(json.load(sys.stdin)['value'])")
+
+        MINTED=$(curl -s -X POST https://pypi.org/_/oidc/mint-token \
+          -d "{\"token\":\"${OIDC_TOKEN}\"}")
+        PYPI_TOKEN=$(printf '%s' "${MINTED}" \
+          | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+
+        python3 -m pip install --quiet twine
+        TWINE_USERNAME=__token__ TWINE_PASSWORD="${PYPI_TOKEN}" \
+          python3 -m twine upload --non-interactive "${{ inputs.working-directory }}"/dist/*
