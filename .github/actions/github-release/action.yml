@@ -26,9 +26,16 @@ runs:
           ## Changes
           ${{ steps.changelog.outputs.CHANGELOG }}
 
-          ## Install
+          ## Rust crate
+          Published to [crates.io](https://crates.io/crates/rushaudio).
           ```toml
           [dependencies]
           rushaudio = "${{ steps.version.outputs.VERSION }}"
+          ```
+
+          ## Python package
+          Published to [PyPI](https://pypi.org/project/rushaudio/).
+          ```bash
+          pip install rushaudio==${{ steps.version.outputs.VERSION }}
           ```
         generate_release_notes: true
